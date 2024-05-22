@@ -1,0 +1,14 @@
+---
+# - name: Run the equivalent of "apt-get update" as a separate step
+  ansible.builtin.yum:
+    update_cache: yes
+  register: result
+
+- name: List outdated packages
+  debug: 
+    msg: "{{ result.stdout_lines }}"
+
+- name: Update all packages to their latest version
+  ansible.builtin.yum:
+    name: "*"
+    state: latest
