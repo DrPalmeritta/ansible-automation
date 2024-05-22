@@ -1,0 +1,6 @@
+---
+- include: apt-upgrade-packages.yml
+  when: ansible_facts['os_family'] in ['Debian']
+  
+- include: yum-upgrade-packages.yml
+  when: ansible_facts['os_family'] in ['RedHat', 'CentOS', 'Rocky']

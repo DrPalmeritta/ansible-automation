@@ -1,0 +1,3 @@
+---
+- include: reboot.yml
+  when: ansible_facts['os_family'] in ['RedHat', 'CentOS', 'Debian', 'Rocky']

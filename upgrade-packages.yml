@@ -1,0 +1,10 @@
+---
+- name: Update outdated packages & reboot
+  hosts: all
+  gather_facts: no
+  serial: 1
+  become: true
+
+  roles:
+    - upgrade-packages
+    - reboot
