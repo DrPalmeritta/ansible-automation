@@ -1,0 +1,23 @@
+---
+# role logic
+fetch_token: 'false'
+
+# default name used on amd64 architecture
+k3s_binary_download_name: 'k3s'
+k3s_sha256sum_download_name: 'sha256sum-amd64.txt'
+
+# default for type of node
+k3s_node_type: 'server'
+systemd_unit_name: 'k3s.service'
+uninstall_script_name: 'k3s-uninstall.sh'
+
+# ignore errors
+ignore_errors_when_binary_downloaded: 'false'
+
+# directories
+path_to_install_to: '/usr/local/bin'
+systemd_directory_path: '/etc/systemd/system'
+
+# k3s releases
+k3s_installation_url: 'https://update.k3s.io/v1-release/channels'
+k3s_installation_channel: 'stable'

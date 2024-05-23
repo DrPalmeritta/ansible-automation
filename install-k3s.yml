@@ -1,0 +1,10 @@
+---
+- name: Install k3s
+  hosts: all
+  gather_facts: yes
+  become: true
+
+  roles:
+    - upgrade-packages
+    - install-k3s
+    - reboot

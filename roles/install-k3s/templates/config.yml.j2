@@ -1,0 +1,257 @@
+
+# {{ ansible_managed }}
+
+# listener
+
+{% if bind_address is defined %}
+bind-address: "{{ bind_address }}"
+{% endif %}
+{% if https_listen_port is defined %}
+https-listen-port: "{{ https_listen_port }}"
+{% endif %}
+{% if advertise_address is defined %}
+advertise-address: "{{ advertise_address }}"
+{% endif %}
+{% if advertise_port is defined %}
+advertise-port: "{{ advertise_port }}"
+{% endif %}
+{% if tls_san is defined %}
+tls-san:
+{% for line in tls_san %}
+  - "{{ line }}"
+{% endfor %}
+{% endif %}
+
+# data
+
+{% if data_dir is defined %}
+data-dir: "{{ data_dir }}"
+{% endif %}
+
+# networking
+
+{% if cluster_cidr is defined %}
+cluster-cidr: "{{ cluster_cidr }}"
+{% endif %}
+{% if service_cidr is defined %}
+service-cidr: "{{ service_cidr }}"
+{% endif %}
+{% if service_node_port_range is defined %}
+service-node-port-range: "{{ service_node_port_range }}"
+{% endif %}
+{% if cluster_dns is defined %}
+cluster-dns: "{{ cluster_dns }}"
+{% endif %}
+{% if cluster_domain is defined %}
+cluster-domain: "{{ cluster_domain }}"
+{% endif %}
+{% if flannel_backend is defined %}
+flannel-backend: "{{ flannel_backend }}"
+{% endif %}
+{% if flannel_ipv6_masq is defined and flannel_ipv6_masq | bool %}
+flannel-ipv6-masq: true
+{% endif %}
+{% if flannel_external_ip is defined and flannel_external_ip | bool %}
+flannel-external-ip: true
+{% endif %}
+{% if egress_selector_mode is defined %}
+egress-selector-mode: "{{ egress_selector_mode }}"
+{% endif %}
+{% if servicelb_namespace is defined %}
+servicelb-namespace: "{{ servicelb_namespace }}"
+{% endif %}
+
+# cluster
+
+{% if token is defined %}
+token: "{{ token }}"
+{% endif %}
+{% if token_file is defined %}
+token-file: "{{ token_file }}"
+{% endif %}
+{% if agent_token is defined %}
+agent-token: "{{ agent_token }}"
+{% endif %}
+{% if agent_token_file is defined %}
+agent-token-file: "{{ agent_token_file }}"
+{% endif %}
+{% if server_url is defined %}
+server: "{{ server_url }}"
+{% endif %}
+{% if cluster_init is defined and cluster_init | bool %}
+cluster-init: true
+{% endif %}
+{% if secrets_encryption is defined and secrets_encryption | bool %}
+secrets-encryption: true
+{% endif %}
+
+# client
+
+{% if write_kubeconfig is defined %}
+write-kubeconfig: "{{ write_kubeconfig }}"
+{% endif %}
+{% if write_kubeconfig_mode is defined %}
+write-kubeconfig-mode: "{{ write_kubeconfig_mode }}"
+{% endif %}
+
+# flags
+
+{% if kube_apiserver_arg is defined %}
+kube-apiserver-arg: "{{ kube_apiserver_arg }}"
+{% endif %}
+{% if etcd_arg is defined %}
+etcd-arg: "{{ etcd_arg }}"
+{% endif %}
+{% if kube_controller_manager_arg is defined %}
+kube-controller-manager-arg: "{{ kube_controller_manager_arg }}"
+{% endif %}
+{% if kube_scheduler_arg is defined %}
+kube-scheduler-arg: "{{ kube_scheduler_arg }}"
+{% endif %}
+{% if kube_cloud_controller_manager_arg is defined %}
+kube-cloud-controller-manager-arg: "{{ kube_cloud_controller_manager_arg }}"
+{% endif %}
+
+# db
+
+{% if datastore_endpoint is defined %}
+datastore-endpoint: "{{ datastore_endpoint }}"
+{% endif %}
+{% if datastore_cafile is defined %}
+datastore-cafile: "{{ datastore_cafile }}"
+{% endif %}
+{% if datastore_certfile is defined %}
+datastore-certfile: "{{ datastore_certfile }}"
+{% endif %}
+{% if datastore_keyfile is defined %}
+datastore-keyfile: "{{ datastore_keyfile }}"
+{% endif %}
+
+# storage
+
+{% if default_local_storage_path is defined %}
+default-local-storage-path: "{{ default_local_storage_path }}"
+{% endif %}
+
+# components
+
+{% if disable_something is defined %}
+disable: "{{ disable_something }}"
+{% endif %}
+{% if disable_scheduler is defined and disable_scheduler | bool %}
+disable-scheduler: true
+{% endif %}
+{% if disable_cloud_controller is defined and disable_cloud_controller | bool %}
+disable-cloud-controller: true
+{% endif %}
+{% if disable_kube_proxy is defined and disable_kube_proxy | bool %}
+disable-kube-proxy: true
+{% endif %}
+{% if disable_network_policy is defined and disable_network_policy | bool %}
+disable-network-policy: true
+{% endif %}
+{% if disable_helm_controller is defined and disable_helm_controller | bool %}
+disable-helm-controller: true
+{% endif %}
+
+# agent/node
+
+{% if node_name is defined %}
+node-name: "{{ node_name }}"
+{% endif %}
+{% if with_node_id is defined and with_node_id | bool %}
+with-node-id: true
+{% endif %}
+{% if node_label is defined %}
+node-label:
+{% for line in node_label %}
+  - "{{ line }}"
+{% endfor %}
+{% endif %}
+{% if node_taint is defined %}
+node-taint:
+{% for line in node_taint %}
+  - "{{ line }}"
+{% endfor %}
+{% endif %}
+{% if image_credential_provider_bin_dir is defined %}
+image-credential-provider-bin-dir: "{{ image_credential_provider_bin_dir }}"
+{% endif %}
+{% if image_credential_provider_config is defined %}
+image-credential-provider-config: "{{ image_credential_provider_config }}"
+{% endif %}
+{% if protect_kernel_defaults is defined and protect_kernel_defaults | bool %}
+protect-kernel-defaults: true
+{% endif %}
+{% if selinux is defined and selinux | bool %}
+selinux: true
+{% endif %}
+{% if lb_server_port is defined %}
+lb-server-port: {{ lb_server_port }}
+{% endif %}
+
+# agent/runtime
+
+{% if docker is defined and docker | bool %}
+docker: true
+{% endif %}
+{% if container_runtime_endpoint is defined %}
+container-runtime-endpoint: "{{ container_runtime_endpoint }}"
+{% endif %}
+{% if pause_image is defined %}
+pause-image: "{{ pause_image }}"
+{% endif %}
+{% if snapshotter is defined %}
+snapshotter: "{{ snapshotter }}"
+{% endif %}
+{% if private_registry is defined %}
+private-registry: "{{ private_registry }}"
+{% endif %}
+{% if system_default_registry is defined %}
+system-default-registry: "{{ system_default_registry }}"
+{% endif %}
+
+# agent/networking
+
+{% if node_ip is defined %}
+node-ip: "{{ node_ip }}"
+{% endif %}
+{% if node_external_ip is defined %}
+node-external-ip: "{{ node_external_ip }}"
+{% endif %}
+{% if resolv_conf is defined %}
+resolv-conf: "{{ resolv_conf }}"
+{% endif %}
+{% if flannel_iface is defined %}
+flannel-iface: "{{ flannel_iface }}"
+{% endif %}
+{% if flannel_conf is defined %}
+flannel-conf: "{{ flannel_conf }}"
+{% endif %}
+{% if flannel_cni_conf is defined %}
+flannel-cni-conf: "{{ flannel_cni_conf }}"
+{% endif %}
+
+# agent/flags
+
+{% if kubelet_arg is defined %}
+kubelet-arg:
+{% for line in kubelet_arg %}
+  - "{{ line }}"
+{% endfor %}
+{% endif %}
+{% if kube_proxy_arg is defined %}
+kube-proxy-arg: "{{ kube_proxy_arg }}"
+{% endif %}
+
+# experimental
+
+{% if rootless is defined and rootless | bool %}
+rootless: true
+{% endif %}
+{% if enable_pprof is defined and enable_pprof | bool %}
+enable-pprof: true
+{% endif %}
+{% if prefer_bundled_bin is defined and prefer_bundled_bin | bool %}
+prefer-bundled-bin: true
+{% endif %}
