@@ -1,0 +1,10 @@
+---
+- name: Install NodeJS
+  hosts: all
+  gather_facts: yes
+  become: true
+
+  roles:
+    - upgrade-packages
+    - macos-get-ready
+    - install-nodejs
