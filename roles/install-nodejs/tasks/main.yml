@@ -1,0 +1,19 @@
+---
+- name: Install Node.js
+  homebrew:
+    name: node
+    state: present
+
+- name: Verify Node.js installation
+  command: node --version
+  register: node_version
+
+- debug:
+    msg: "Node.js version is {{ node_version.stdout }}"
+
+- name: Verify npm installation
+  command: npm --version
+  register: npm_version
+
+- debug:
+    msg: "npm version is {{ npm_version.stdout }}"

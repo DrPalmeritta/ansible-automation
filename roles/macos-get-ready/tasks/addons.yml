@@ -1,0 +1,11 @@
+---
+- name: Install Asciidoctor
+  homebrew: 
+    name: asciidoctor
+    state: present
+  when: 
+    - homebrew_ready == "true"
+  register: asciidoctor_status | bool
+
+- debug:
+    msg: "Asciidoctor is installed == {{ asciidoctor_status.stdout }}"

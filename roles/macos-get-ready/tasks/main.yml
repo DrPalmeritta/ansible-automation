@@ -1,0 +1,6 @@
+---
+- include: environment.yml
+  when: ansible_facts['os_family'] in ['MacOS', 'Darwin']
+
+- include: addons.yml
+  when: ansible_facts['os_family'] in ['MacOS', 'Darwin']
