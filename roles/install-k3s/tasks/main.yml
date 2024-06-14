@@ -1,13 +1,13 @@
 ---
-- include: set_facts.yml
-- include: binary.yml
-- include: configuration.yml
-- include: scripts.yml
-- include: service.yml
-- include: kubeconfig.yml
+- include_tasks: set_facts.yml
+- include_tasks: binary.yml
+- include_tasks: configuration.yml
+- include_tasks: scripts.yml
+- include_tasks: service.yml
+- include_tasks: kubeconfig.yml
   when:
     - k3s_node_type == "server"
-- include: token.yml
+- include_tasks: token.yml
   when:
   - k3s_node_type == "server"
   - fetch_token | bool
