@@ -23,7 +23,7 @@
     - not homebrew_intel_check.stat.exists
     - not homebrew_arm_check.stat.exists
     - install_homebrew_if_missing
-  register: homebrew_ready | bool
+  register: homebrew_ready
 
 - debug:
-    msg: "Homebrew is installed == {{ homebrew_ready.stdout }}"
+    var: homebrew_ready
