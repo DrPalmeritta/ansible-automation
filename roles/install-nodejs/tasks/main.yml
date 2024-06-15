@@ -1,5 +1,6 @@
 ---
 - name: Install Node.js
+  become: no #Running Homebrew as root no longer supported
   homebrew:
     name: node
     state: present

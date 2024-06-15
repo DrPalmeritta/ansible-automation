@@ -2,7 +2,7 @@
 - name: Install NodeJS
   hosts: all
   gather_facts: yes
-  become: true
+  become: yes
 
   roles:
     - upgrade-packages
