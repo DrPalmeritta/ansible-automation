@@ -1,0 +1,35 @@
+# .ansible-lint
+
+# Исключить директории и файлы из проверки
+exclude_paths:
+  - tests/                            # Тестовые сценарии
+  - legacy_scripts/                   # Устаревшие скрипты
+  - experimental/                     # Экспериментальные роли
+
+# Отключенные правила
+skip_list:
+  - fqcn-builtins                     # Разрешить короткие имена встроенных модулей (например, `command` вместо `ansible.builtin.command`)
+  - role-name                         # Игнорировать требования к именованию ролей
+  - no-handler                        # Пропустить проверку отсутствия обработчиков для задач
+
+# Уровень серьезности правил
+rules:
+  risky-shell-pipe: error             # Считать использование небезопасных pipe в shell ошибкой
+  command-instead-of-module: warning  # Предупреждение при использовании `command` вместо модуля
+  yaml:                               # Настройки для YAML-файлов
+    truthy: error                     # Запретить значения типа "yes"/"no" вместо boolean
+
+# Формат вывода результатов
+output_format: colored                # Цветной вывод (другие варианты: quiet, parseable)
+
+# Использовать FQCN (Fully Qualified Collection Name) для модулей
+use_fqcn: canonical                   # Автоматически преобразовывать короткие имена в FQCN
+
+# Теги для фильтрации проверок
+tags:
+  - best-practice                     # Включить проверки из категории "best-practice"
+  - skip_ansible_lint                 # Игнорировать задачи с тегом `skip_ansible_lint`
+
+# Дополнительные настройки
+parseable_errors: true                # Упрощенный вывод для интеграции с CI/CD
+quiet: true                           # Показывать только ошибки (без предупреждений)

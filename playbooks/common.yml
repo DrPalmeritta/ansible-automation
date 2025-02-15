@@ -1,0 +1,15 @@
+---
+- name: Common playbook to preconfigure RHEL / REDOS hosts
+  hosts: all
+  gather_facts: true
+  become: false
+  roles: ['common']
+
+  tasks:
+    - name: Check variable definitions
+      ansible.builtin.assert:
+        that: "{{ item }} is defined"
+        fail_msg: "Have to specify {{ item }} global host variable"
+      loop:
+        - environment
+        - selinux_enabled

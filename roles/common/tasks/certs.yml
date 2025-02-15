@@ -1,21 +1,13 @@
 ---
-- name: Add CA root
+- name: Distribute necessary certificates to hosts
   become: true
   ansible.builtin.copy:
-    src: "{{ certificates_dir }}/CA_root.crt"
-    dest: "/etc/pki/ca-trust/source/anchors/CA_root.crt"
+    src: "{{ item }}"
+    dest: "/etc/pki/ca-trust/source/anchors/"
     owner: root
     group: root
     mode: '0644'
-
-- name: Add CA issue
-  become: true
-  ansible.builtin.copy:
-    src: "{{ certificates_dir }}/Bank_GPB_CA_Server.crt"
-    dest: "/etc/pki/ca-trust/source/anchors/Bank_GPB_CA_Server.crt"
-    owner: root
-    group: root
-    mode: '0644'
+  with_fileglob: files/*.crt
 
 - name: Extract certs
   become: true

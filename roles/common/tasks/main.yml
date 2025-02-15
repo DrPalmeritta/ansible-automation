@@ -4,12 +4,13 @@
     file: facts.yml
   tags: ['linux', 'always', 'check']
 
-- name: init host main attributes
+- name: Init host main attributes
   ansible.builtin.include_tasks:
     file: prerequirements.yml
+  when: true
   tags: ['linux', 'always']
 
-- name: selinux manage policy
+- name: SELinux manage policy
   ansible.builtin.include_tasks:
     file: selinux.yml
   when:
@@ -17,56 +18,66 @@
     - selinux_enabled | bool
   tags: ['linux', 'selinux']
 
-- name: vm settings tuning
+- name: VM settings tuning
   ansible.builtin.include_tasks:
     file: hardering.yml
+  when: true
   tags: ['linux', 'always']
 
-- name: swap disabling
+- name: Swap disabling
   ansible.builtin.include_tasks:
     file: swap.yml
+  when: true
   tags: ['linux', 'always', 'swap']
 
-- name: configure /etc/hosts
+- name: Configure /etc/hosts
   ansible.builtin.include_tasks:
     file: etc-hosts.yml
   when: populate_inventory_to_hosts_file
   tags: ['linux', 'hosts']
 
-- name: add repo nexus
+- name: Add custom repos if defined so
   ansible.builtin.include_tasks:
-    file: repositories.yml
+    file: custom_repositories.yml
+  when:
+    - use_custom_repositories
+    - private_repository_is_available | default ('false')
   tags: ['linux', 'always']
-  when: ( nexus_is_available | default ('true') )
 
-- name: install all os updates
+- name: Install all OS updates
   ansible.builtin.include_tasks:
     file: updates.yml
+  when: true
   tags: ['linux', 'always', 'updates']
 
-- name: setup firewalld
+- name: Setup firewalld
   ansible.builtin.include_tasks:
     file: firewalld.yml
+  when: true
   tags: ['linux', 'always']
 
-- name: insert necessary certificates
+- name: Insert necessary certificates
   ansible.builtin.include_tasks:
     file: certs.yml
+  when: true
   tags: ['linux', 'always']
 
-- name: configure users environment
+- name: Configure users environment
   ansible.builtin.include_tasks:
     file: users.yml
+  when: true
   tags: ['linux', 'user', 'always']
 
-- name: install required packages
+- name: Install required packages
   ansible.builtin.include_tasks:
     file: dependencies.yml
+  when: true
   tags: ['linux', 'always']
 
-- name: monitoring & logging setup
+- name: Monitoring & logging setup
   ansible.builtin.include_tasks:
     file: observing.yml
+  when: true
   tags: ['linux', 'observing']
 
 - name: SELinux AVC check after run

@@ -1,16 +1,17 @@
 ---
-- name: "Clean up unused {{ item }}"
+- name: Clean up unused packages
   become: true
   ansible.builtin.package:
     name: "{{ item | default ([]) }}"
     state: absent
   loop: "{{ common_unnecessary_packages }}"
-  #TODO поменять default на проверку по бит весу when: common_unnecessary_packages > 0
+  when: common_unnecessary_packages | length > 0
 
-- name: "COMMON PACKAGES | Be sure {{ item }} is installed"
+- name: COMMON PACKAGES | Be sure wanted packages are installed
   become: true
   ansible.builtin.package:
     name: "{{ item | default ([]) }}"
     state: present
     update_cache: yes
   loop: "{{ common_packages }}"
+  when: common_packages | length > 0

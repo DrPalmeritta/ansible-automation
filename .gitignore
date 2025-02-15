@@ -1,8 +1,12 @@
-### Helm ###
+###################################################################################################
+### HELM ##########################################################################################
+
 # Chart dependencies
 **/charts/*.tgz
 
-### macOS ###
+###################################################################################################
+### MACOS #########################################################################################
+
 # General
 .DS_Store
 .AppleDouble
@@ -30,14 +34,12 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-### macOS Patch ###
 # iCloud generated files
 *.icloud
 
-### Golang ###
-# If you prefer the allow list template instead of the deny list, see community template:
-# https://github.com/github/gitignore/blob/main/community/Golang/Go.AllowList.gitignore
-#
+###################################################################################################
+### GOLANG ########################################################################################
+
 # Binaries for programs and plugins
 *.exe
 *.exe~

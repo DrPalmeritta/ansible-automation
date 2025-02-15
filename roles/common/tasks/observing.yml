@@ -46,9 +46,9 @@
       when: ansible_os_family == "RED"
   tags: ['logrotate']
 
-- name: SVOI | rules templating
+- name: RSYSLOG | rules templating
   block:
-    - name: Rsyslog rule svoi
+    - name: Rsyslog rule
       become: true
       ansible.builtin.template:
         src: templates/rsyslog.d/log_main.j2.conf
@@ -57,7 +57,7 @@
         group: root
         mode: '0644'
       notify: restart-rsyslog
-  tags: ['svoi']
+  tags: ['rsyslog']
 
 - name: AUDITD | rule templating
   block:

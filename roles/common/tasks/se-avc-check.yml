@@ -7,40 +7,38 @@
         cmd: "ausearch -m avc -ts recent --raw"
       register: avc_raw_output
       changed_when: false
-      ignore_errors: true
+      failed_when: avc_raw_output.rc not in [0, 1]
 
     - name: Convert raw audit data to human-readable format
       become: true
-      ansible.builtin.command:
-        cmd: "echo \"{{ avc_raw_output.stdout }}\" | audit2why"
+      ansible.builtin.shell:
+        cmd: "audit2why"
+      args:
+        stdin: "{{ avc_raw_output.stdout }}"
       register: avc_human_readable
       changed_when: false
       when: avc_raw_output.stdout != ""
 
     - name: Detect critical denial patterns
       ansible.builtin.set_fact:
-        critical_denials: "{{ avc_human_readable.stdout | regex_findall('denied.*(execmem|execstack|write|unlink)') }}"
+        critical_denials: >-
+          {{ avc_human_readable.stdout | 
+          regex_findall('\\bdenied\\b.*\\b(execmem|execstack|write|unlink)\\b') }}
       when: avc_human_readable.stdout != ""
 
-    - name: Trigger failure if critical issues found
-      become: true
-      ansible.builtin.fail:
-        msg: |
-          CRITICAL SELinux ISSUES DETECTED!
-          Affected operations: {{ critical_denials | unique | join(', ') }}
-          
-          Full report:
-          {{ avc_human_readable.stdout | trim }}
-          
-          Immediate actions required:
-          1. Check system integrity
-          2. Analyze SELinux policies
-          3. Consult security team
-      when:
-        - critical_denials | default([]) | length > 0
-        - not force_ignore_selinux | default(false)
-  rescue:
-    - name: Handle SELinux check failure
-      ansible.builtin.debug:
-        msg: "SELinux check bypassed (force_ignore_selinux=true)"
-      when: force_ignore_selinux | default(false)
+    - name: Process results
+      block:
+        - name: Trigger failure if critical issues found
+          ansible.builtin.fail:
+            msg: |
+              CRITICAL SELinux ISSUES DETECTED!
+              Affected operations: {{ critical_denials | unique | join(', ') }}
+              Full report: {{ avc_human_readable.stdout | trim }}
+          when: critical_denials | default([]) | length > 0
+        
+        - name: Show bypass warning
+          ansible.builtin.debug:
+            msg: "SELinux check bypassed (force_ignore_selinux=true)"
+          when: force_ignore_selinux | default(false)
+      
+      when: not force_ignore_selinux | default(false)

@@ -1,12 +1,29 @@
 ---
-- name: Check Nexus API status endpoint
-  ansible.builtin.uri:
-    url: "{{ nexus_base_url }}/service/rest/v1/status"
-    method: GET
-    validate_certs: false
-    status_code: 200
-  register: nexus_status
+- name: Validate private repository health
+  when:
+    - private_repository_enabled | default(false) | bool
+    - private_repository_base_url is defined
+  block:
+    - name: Check Repository API status endpoint
+      ansible.builtin.uri:
+        url: "{{ private_repository_base_url }}/{{ private_repository_api_path if (private_repository_api_path is defined) else omit }}"
+        method: GET
+        body_format: json
+        return_content: yes
+        timeout: 15
+        headers:
+          Connection: close
+        validate_certs: "{{ not ansible_env.INSECURE | default(false) }}"
+        status_code: 200
+      register: private_repository_status
 
-- name: Set fact for Nexus availability
-  set_fact:
-    nexus_is_available: "{{ nexus_status is succeeded }}"
+    - name: Set fact for Private repository availability
+      set_fact:
+        private_repository_is_available: "{{ private_repository_status is succeeded }}"
+  
+  rescue:
+    - name: Set repository as unavailable
+      ansible.builtin.set_fact:
+        private_repository_is_available: false
+  
+  tags: ['repositories']

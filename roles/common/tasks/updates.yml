@@ -1,27 +1,63 @@
----
-- name: Apply all OS updates
-  become: true
-  ansible.builtin.yum:
-    name: "*"
-    state: latest
-    update_cache: yes
-    skip_broken: true
-    nobest: true
-    disable_gpg_check: true
-    exclude:
-      - git if 'bitbucket' in group_names
-  register: yum_update_result
-  notify: Reboot if needed
+- name: OS Updates Management
+  block:
+    - name: YUM | Apply all updates (RHEL/CentOS/RedOS)
+      when: ansible_pkg_mgr == "yum"
+      block:
+        - name: Install updates
+          become: true
+          ansible.builtin.yum:
+            name: "*"
+            state: latest
+            update_cache: yes
+            skip_broken: true
+            nobest: true
+            disable_gpg_check: true
+            exclude: "{{ 'git' if 'bitbucket' in group_names else omit }}"
+          register: pkg_result
+          notify: reboot-needed
 
-- name: Clean YUM cache
-  become: true
-  ansible.builtin.yum:
-    clean: all
-  when: yum_update_result.changed
+        - name: Clean YUM cache
+          become: true
+          ansible.builtin.yum:
+            clean: all
+          when: pkg_result.changed
+      tags: ['os', 'updates', 'yum']
 
-- name: Reboot if needed
-  become: true
-  ansible.builtin.reboot:
-    reboot_timeout: 300
-#  listen: reboot-needed
-  when: yum_update_result.changed
+    - name: APT | Apply all updates (Debian/Ubuntu)
+      when: ansible_pkg_mgr == "apt"
+      block:
+        - name: Update package cache
+          become: true
+          ansible.builtin.apt:
+            update_cache: yes
+          changed_when: false
+
+        - name: Install security updates
+          become: true
+          ansible.builtin.apt:
+            upgrade: dist
+            autoremove: yes
+            cache_valid_time: 3600
+            force_apt_get: yes
+            dpkg_options: "force-confdef,force-confold"
+          register: pkg_result
+          notify: reboot-needed
+
+        - name: Clean APT cache
+          become: true
+          ansible.builtin.apt:
+            autoclean: yes
+          when: pkg_result.changed
+      tags: ['os', 'updates', 'apt']
+
+  always:
+    - name: Reboot if updates were applied
+      become: true
+      ansible.builtin.reboot:
+        reboot_timeout: 300
+      when: 
+        - pkg_result is defined
+        - pkg_result.changed
+        - not force_skip_reboot | default(false)
+      tags: ['reboot']
+    
