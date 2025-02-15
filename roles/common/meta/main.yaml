@@ -12,6 +12,6 @@ galaxy_info:
     - name: RedOS
       versions: ['7.3']
     - name: Debian
-      versions: ['10', '11']
+      versions: ['10', '11', '12']
 
 dependencies: []
