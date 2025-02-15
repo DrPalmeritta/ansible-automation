@@ -1,0 +1,55 @@
+---
+- name: Restart chronyd
+  become: true
+  ansible.builtin.service:
+    name: chronyd
+    state: restarted
+  listen: restart-chronyd
+
+- name: Restart sshd
+  become: true
+  ansible.builtin.service:
+    name: sshd
+    state: restarted
+  listen: restart-sshd
+
+- name: Reload systemd configuration
+  become: true
+  ansible.builtin.command: systemctl daemon-reload
+  listen: reload-systemd
+
+- name: Reload firewalld
+  become: true
+  ansible.builtin.systemd_service:
+    name: firewalld.service
+    state: reloaded
+  listen: reload-firewalld
+  when:
+    - ansible_facts.services["firewalld"] is defined
+    - ansible_facts.services["firewalld"].state == "running"
+
+- name: Extract certs
+  become: true
+  ansible.builtin.shell: update-ca-trust extract
+  listen: update-ca
+
+- name: Restart auditd
+  become: true
+  ansible.builtin.command:
+    cmd: /sbin/service auditd condrestart
+  listen: systemd-restart-auditd
+
+- name: Restart rsyslog
+  become: true
+  ansible.builtin.service:
+    name: rsyslog
+    state: restarted
+    enabled: true
+  listen: restart-rsyslog
+
+- name: Restart journald
+  become: true
+  ansible.builtin.service:
+    name: systemd-journald
+    state: restarted
+  listen: restart-journald

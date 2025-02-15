@@ -1,0 +1,15 @@
+---
+- name: HOSTS | populate inventory into hosts file
+  become: true
+  ansible.builtin.blockinfile:
+    dest: /etc/hosts
+    block: |
+      {% for host in groups[host_group] %}
+      {{ hostvars[host].ansible_host }} {{ hostvars[host]['ansible_facts']['fqdn'] }} {{ hostvars[host]['ansible_facts']['hostname'] }}
+      {% endfor %}
+    marker: "# {mark} Ansible inventory hosts: {{ host_group }}"
+    insertafter: EOF
+    owner: root
+    group: root
+    mode: '0644'
+    backup: true

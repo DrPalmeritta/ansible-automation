@@ -1,0 +1,150 @@
+---
+- name: Set open files limit in sysctl.conf
+  become: true
+  ansible.posix.sysctl:
+    name: fs.file-max
+    value: 65536
+    state: present
+
+- name: SWAP | manage policy
+  block:
+    - name: Be sure swap is disabled
+      become: true
+      ansible.builtin.command:
+        cmd: swapoff -a
+      changed_when: false
+
+    - name: Be sure swap is removed from /etc/fstab
+      become: true
+      ansible.builtin.lineinfile:
+        path: /etc/fstab
+        regexp: '\sswap\s'
+        state: absent
+        backup: true
+  tags: ['swap']
+
+- name: Set session idle timeout in /etc/bashrc
+  become: true
+  ansible.builtin.lineinfile:
+    dest: '/etc/bashrc'
+    regexp: "TMOUT"
+    line: "TMOUT=900"
+    state: present
+
+- name: Set session idle timeout in /etc/profile
+  become: true
+  ansible.builtin.lineinfile:
+    dest: '/etc/profile'
+    regexp: "TMOUT"
+    line: "TMOUT=900"
+    state: present
+
+- name: Set min password length in /etc/security/pwquality.conf
+  become: true
+  ansible.builtin.lineinfile:
+    dest: '/etc/security/pwquality.conf'
+    regexp: "minlen"
+    line: "minlen = 16"
+    state: present
+
+- name: SSHD | policy settings tune
+  block:
+    - name: Ensure system crypto policy disabled for ssh
+      become: true
+      ansible.builtin.lineinfile:
+        dest: '/etc/sysconfig/sshd'
+        regexp: "^CRYPTO_POLICY="
+        line: "CRYPTO_POLICY="
+        insertafter: "# CRYPTO_POLICY="
+        state: present
+
+    - name: Set ssh Ciphers
+      become: true
+      ansible.builtin.lineinfile:
+        dest: "/etc/ssh/sshd_config"
+        regexp: "^Ciphers"
+        line: "Ciphers aes256-ctr,aes192-ctr,aes128-ctr"
+        state: present
+        validate: sshd -t -f %s
+      notify: restart-sshd
+
+    - name: Set ssh MACs
+      become: true
+      ansible.builtin.lineinfile:
+        dest: "/etc/ssh/sshd_config"
+        regexp: "^MACs"
+        line: "MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,\
+               hmac-sha2-512,hmac-sha2-256"
+        state: present
+        validate: sshd -t -f %s
+      notify: restart-sshd
+
+    - name: Set ssh key exchanges
+      become: true
+      ansible.builtin.lineinfile:
+        dest: "/etc/ssh/sshd_config"
+        regexp: "^KexAlgorithms"
+        line: "KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,\
+               diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,\
+               diffie-hellman-group-exchange-sha256"
+        state: present
+        validate: sshd -t -f %s
+      notify: restart-sshd
+
+    - name: Set ssh HostKeyAlgorithms
+      become: true
+      ansible.builtin.lineinfile:
+        dest: "/etc/ssh/sshd_config"
+        regexp: "^HostKeyAlgorithms"
+        line: "HostKeyAlgorithms ssh-ed25519,ssh-rsa"
+        state: present
+        validate: sshd -t -f %s
+      notify: restart-sshd
+  tags: ['sshd']
+
+#TODO часть функционала порольной политики (отказались в сторону ssh ключей only)
+#- name: USERS | password settings tune
+#  block:
+#    - name: Get all users
+#      become: true
+#      ansible.builtin.getent:
+#        database: passwd
+#
+#    - name: Convert users dict to list
+#      ansible.builtin.set_fact:
+#        all_users: "{{ getent_passwd.keys() | list }}"
+#
+#    - name: Change min password expiration days for all users
+#      become: true
+#      ansible.builtin.user:
+#        name: "{{ item }}"
+#        password_expire_min: 7
+#      with_items: "{{ all_users }}"
+#
+#    - name: Password complexity gecoscheck
+#      become: true
+#      ansible.builtin.lineinfile:
+#        dest: '/etc/security/pwquality.conf'
+#        regexp: "gecoscheck"
+#        line: "gecoscheck = 1"
+#        state: present
+#
+#    - name: Password complexity usercheck
+#      become: true
+#      ansible.builtin.lineinfile:
+#        dest: '/etc/security/pwquality.conf'
+#        regexp: "usercheck"
+#        line: "usercheck = 1"
+#        state: present
+#
+#    - name: Be sure password remember is set
+#      become: true
+#      community.general.pamd:
+#        name: system-auth
+#        type: password
+#        control: sufficient
+#        module_path: pam_unix.so
+#        module_arguments:
+#          - remember=10
+#        state: args_present
+#  tags: ['users']

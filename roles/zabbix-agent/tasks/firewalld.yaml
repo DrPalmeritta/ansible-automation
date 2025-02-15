@@ -1,0 +1,23 @@
+---
+- name: Pull service facts
+  ansible.builtin.service_facts:
+
+- name: If firewalld is disabled
+  become: true
+  ansible.builtin.service:
+    name: firewalld.service
+    state: started
+    enabled: yes
+
+- name: FIREWALLD | Be sure ports traffic permitted
+  become: true
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    zone: public
+    permanent: true
+    state: enabled
+  loop: "{{ firewalld_zabbix_ports }}"
+  notify: reload-firewalld
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

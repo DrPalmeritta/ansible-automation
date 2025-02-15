@@ -1,0 +1,19 @@
+---
+- name: Pull service facts
+  ansible.builtin.service_facts:
+
+- name: Be sure specified port traffic is permitted
+  become: true
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    zone: public
+    permanent: true
+    state: enabled
+  loop: "{{ firewalld_kesl_ports }}"
+  when:
+    - ansible_facts.services["firewalld"] is defined
+    - ansible_facts.services["firewalld"].state == "running"
+  notify: reload-firewalld
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

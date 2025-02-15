@@ -1,0 +1,47 @@
+---
+- name: Reload klnagent service
+  become: true
+  ansible.builtin.service:
+    name: "{{ klnagent_service_name }}"
+    state: reloaded
+  listen: reload-klnagent
+
+- name: Restart klnagent service
+  become: true
+  ansible.builtin.service:
+    name: "{{ klnagent_service_name }}"
+    state: restarted
+  listen: restart-klnagent
+
+- name: Restart kesl agent service
+  become: true
+  ansible.builtin.service:
+    name: "{{ kesl_service_name }}"
+    state: restarted
+  listen: restart-kesl
+
+- name: Reload systemd configuration
+  become: true
+  ansible.builtin.command: systemctl daemon-reload
+  listen: reload-systemd
+
+- name: Reload firewalld
+  become: true
+  ansible.builtin.systemd_service:
+    name: firewalld.service
+    state: reloaded
+  listen: reload-firewalld
+  when:
+    - ansible_facts.services["firewalld"] is defined
+    - ansible_facts.services["firewalld"].state == "running"
+
+# Ребут происходит в role/common, здесь же лишь применение политик
+- name: Reload SELinux policy
+  become: true
+  ansible.builtin.command: load_policy
+  listen: reload-selinux-policy
+
+- name: Relabel KESL files
+  become: true
+  ansible.builtin.command: "restorecon -Rv {{ kesl_default_path }} {{ kesl_default_log_path }}"
+  listen: relabel-kesl-files

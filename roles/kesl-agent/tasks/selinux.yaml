@@ -1,0 +1,51 @@
+---
+- name: Install SELinux dependencies
+  become: true
+  ansible.builtin.package:
+    name: "{{ (ansible_distribution_major_version >= '8') | ternary ('policycoreutils-python-utils', 'policycoreutils-python') }}"
+    state: present
+  register: kesl_agent_policycoreutils_installed
+  until: kesl_agent_policycoreutils_installed is succeeded
+
+- name: Set file contexts for klnagent
+  community.general.sefcontext:
+    target: "{{ item.path }}"
+    setype: "{{ item.type }}"
+    state: present
+  loop: "{{ klnagent_selinux_file_contexts }}"
+  notify:
+    - relabel-kesl-files
+    - reload-selinux-policy
+
+- name: Set file contexts for kesl
+  community.general.sefcontext:
+    target: "{{ item.path }}"
+    setype: "{{ item.type }}"
+    state: present
+  loop: "{{ kesl_selinux_file_contexts }}"
+  notify:
+    - relabel-kesl-files
+    - reload-selinux-policy
+
+- name: Configure SELinux ports for KESL
+  community.general.seport:
+    ports: "{{ item }}"
+    proto: tcp
+    setype: antivirus_port_t
+    state: present
+  loop: "{{ firewalld_kesl_ports }}"
+  when: firewalld_kesl_ports | length > 0
+
+- name: Allow antivirus SELinux domain
+  ansible.builtin.shell:
+    cmd: "setsebool -P antivirus_can_scan_system {{ item }}"
+  loop:
+    - 1
+    - antivirus_use_jit=1
+
+- name: Apply SELinux policies
+  ansible.builtin.command:
+    cmd: semanage permissive -a klmsd_t
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

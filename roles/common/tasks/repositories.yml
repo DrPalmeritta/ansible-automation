@@ -1,0 +1,77 @@
+---
+- name: Display the content of current yum.repos.d
+  ansible.builtin.debug:
+    msg: "{{ lookup('ansible.builtin.fileglob', '/etc/yum.repos.d/*.repo') }}"
+
+- name: Backup existing repos in yum.repos.d dir
+  ansible.builtin.copy:
+    src: "/etc/yum.repos.d/"
+    dest: "/tmp/yum.repos.d.backup/"
+    remote_src: true
+    directory_mode: true
+  when: false
+
+- name: Remove all .repo files
+  become: true
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: absent
+  with_fileglob: "/etc/yum.repos.d/*.repo"
+#  ignore_errors: true
+
+- name: Remove orphaned .repo file if exists so
+  become: true
+  ansible.builtin.command:
+    cmd: "rm -f /etc/yum.repos.d/*.repo"
+
+#- name: Disable all repos
+#  become: yes
+#  become_method: sudo
+#  ansible.builtin.shell: find /etc/yum.repos.d/ -type f  -name "*.repo" | xargs  sed -i 's/enabled=1/enabled=0/g'
+#  changed_when: true
+#  when: nexus_repo_list_all is defined
+#  tags: ['yum', 'repositories']
+
+- name: Be sure all the INT repositories are installed
+  block:
+    - name: YUM.REPOS.D | Add COMMON list repositories
+      become: true
+      ansible.builtin.yum_repository:
+        name: "{{ item.name }}"
+        description: "{{ item.description }}"
+        baseurl: "{{ nexus_base_url }}/repository/{{ item.name }}"
+        mode: 0644
+        username: "{{ nexus_admin_user }}"
+        password: "{{ nexus_admin_pass }}"
+        repo_gpgcheck: false
+        sslverify: true
+        enabled: "{{ item.enabled }}"
+        metadata_expire: "-1"
+      loop: "{{ nexus_repo_list_all }}"
+      when: nexus_repo_list_all is defined
+
+    - name: YUM.REPOS.D | Add SPECIFIED FOR ENV list repositories
+      become: true
+      ansible.builtin.yum_repository:
+        name: "{{ item.name }}"
+        description: "{{ item.description }}"
+        baseurl: "{{ nexus_base_url }}/repository/{{ item.name }}{{ '/' + ( item.path if item.path is defined else '' ) }}"
+        mode: '0644'
+        username: "{{ nexus_admin_user }}"
+        password: "{{ nexus_admin_pass }}"
+        repo_gpgcheck: false
+        sslverify: true
+        enabled: "{{ item.enabled }}"
+        metadata_expire: "-1"
+      loop: "{{ ( env_type == 'prod' ) | ternary ( nexus_repo_list_cdp, nexus_repo_list_cdl ) }}"
+      when: nexus_repo_list_cdl is defined or nexus_repo_list_cdp is defined
+  tags: ['yum', 'repositories']
+
+#TODO собрать репы для DMZ зоны
+#- name: Be sure all the DMZ repositories are installed
+#  block:
+#  tags: ['yum', 'repositories']
+
+- name: Be sure repo cache is up to date
+  become: true
+  ansible.builtin.command: "yum makecache"

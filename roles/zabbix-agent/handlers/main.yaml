@@ -1,0 +1,37 @@
+---
+- name: "Be sure {{ zabbix_agent_service_name }} service traffic permitted"
+  become: true
+  ansible.posix.firewalld:
+    service: "{{ zabbix_agent_service_name }}"
+    permanent: true
+    state: enabled
+  listen: firewalld-service-permitted
+  when:
+    - ansible_facts.services["firewalld"] is defined
+    - ansible_facts.services["firewalld"].state == "running"
+#    - ( ansible_facts.services["{{ zabbix_agent_service_name }}.service"] is defined ) or
+#      ( ansible_facts.services["{{ zabbix_agent_service_name }}"] is defined )
+
+- name: Reload firewalld
+  become: true
+  ansible.builtin.systemd_service:
+    name: firewalld.service
+    state: reloaded
+  listen: reload-firewalld
+  when:
+    - ansible_facts.services["firewalld"] is defined
+    - ansible_facts.services["firewalld"].state == "running"
+
+- name: Restart Zabbix Agent
+  become: true
+  ansible.builtin.service:
+    name: "{{ zabbix_agent_service_name }}"
+    state: restarted
+  listen: restart-zabbix-agent
+  when: ansible_os_family != "Darwin"
+
+# Ребут происходит в role/common, здесь же лишь применение политик
+- name: Reload SELinux policy
+  become: true
+  ansible.builtin.command: load_policy
+  listen: reload-selinux-policy

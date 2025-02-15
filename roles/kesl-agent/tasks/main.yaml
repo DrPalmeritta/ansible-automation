@@ -1,0 +1,33 @@
+---
+- name: init host main attributes
+  ansible.builtin.include_tasks:
+    file: prerequirements.yaml
+  tags: ['linux', 'always']
+
+- name: setup firewalld
+  ansible.builtin.include_tasks:
+    file: firewalld.yaml
+  tags: ['linux', 'always']
+
+#- name: monitoring & logging setup
+#  ansible.builtin.include_tasks:
+#    file: observing.yaml
+#  tags: ['observing']
+
+- name: setup klnagent agent
+  ansible.builtin.include_tasks:
+    file: klnagent.yaml
+  tags: ['kesl']
+
+- name: setup kesl agent
+  ansible.builtin.include_tasks:
+    file: kesl.yaml
+  tags: ['kesl']
+
+- name: selinux manage policy
+  ansible.builtin.include_tasks:
+    file: selinux.yaml
+  when:
+    - selinux_allowed | bool
+    - selinux_enabled | bool
+  tags: ['selinux']

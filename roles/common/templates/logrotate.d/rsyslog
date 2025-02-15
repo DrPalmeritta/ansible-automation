@@ -1,0 +1,19 @@
+# {{ ansible_managed }}
+/var/log/cron
+/var/log/maillog
+/var/log/messages
+/var/log/secure
+/var/log/spooler
+{
+    missingok
+    sharedscripts
+    daily
+    create 0640 root linux_log
+    compress
+    rotate 2
+    dateformat -%Y%m%d-%s
+    postrotate
+        /usr/bin/systemctl kill -s HUP rsyslog.service >/dev/null 2>&1 || true
+        /usr/bin/setfacl -m g:audit_log_viewer:r /var/log/messages
+    endscript
+}

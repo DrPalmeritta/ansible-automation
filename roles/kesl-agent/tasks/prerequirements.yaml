@@ -1,0 +1,10 @@
+---
+# Disabling for Ubuntu and Debian as selinux is disabled by default
+- name: Disable the selinux
+  ansible.posix.selinux:
+    state: disabled
+  when:
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution == "Debian"
+  register: selinux_not_allowed
+  tags: ['selinux']

@@ -1,0 +1,60 @@
+---
+- name: Install perl-scripts if required so
+  become: true
+  ansible.builtin.package:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+    disable_gpg_check: true
+  loop: "{{ kesl_perl_packages }}"
+  when: ansible_distribution == 'REDOS'
+
+- name: KLNAGENT | Creating answer file for klnagent
+  become: true
+  ansible.builtin.template:
+    src: klnagent.j2.ini
+    dest: /tmp/klnagent.ini
+    mode: '0644'
+
+- name: Populate /etc/environment
+  become: true
+  ansible.builtin.lineinfile:
+    path: "/etc/environment"
+    state: present
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+  with_items: "{{ kesl_os_environment }}"
+
+- name: KLNAGENT | Be sure klnagent is installed
+  become: true
+  ansible.builtin.package:
+    name: "{{ klnagent_service_name }}"
+    state: present
+    update_cache: yes
+    disable_gpg_check: true
+  register: klnagent_installed
+  until: klnagent_installed is succeeded
+
+- name: KLNAGENT | Run configuring klnagent
+  become: true
+  ansible.builtin.shell: "{{ klnagent_default_bin_path }}/setup/postinstall.pl"
+  args:
+    executable: /bin/bash
+  environment:
+    KLAUTOANSWERS: /tmp/klnagent.ini
+  notify: restart-klnagent
+
+- name: KLNAGENT | Be sure klnagent service started
+  become: true
+  ansible.builtin.systemd_service:
+    name: "{{ klnagent_service_name }}"
+    enabled: yes
+    state: started
+
+#- name: Remove tempo files
+#  become: true
+#  ansible.builtin.file:
+#    path: "{{ item }}"
+#    state: absent
+#  with_items:
+#    - "/tmp/klnagent.ini"

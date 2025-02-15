@@ -1,0 +1,93 @@
+---
+- name: CHRONY | service templating
+  block:
+    - name: Be sure chrony is installed
+      become: true
+      ansible.builtin.dnf:
+        name: chrony
+        state: present
+
+    - name: Be sure chrony is configured
+      become: true
+      ansible.builtin.template:
+        src: chrony.j2.conf
+        dest: /etc/chrony.conf
+        mode: '0644'
+      notify: restart-chronyd
+
+    - name: Be sure chronyd is running and enabled
+      become: true
+      ansible.builtin.service:
+        name: chronyd.service
+        state: started
+        enabled: true
+  tags: ['chrony']
+
+- name: LOGROTATE | add custom service rules
+  block:
+    - name: Rsyslog rotate settings
+      become: true
+      ansible.builtin.template:
+        src: templates/logrotate.d/rsyslog
+        dest: /etc/logrotate.d/syslog
+        owner: root
+        group: root
+        mode: '0644'
+      when: ansible_os_family == "RedHat"
+
+    - name: Rsyslog rotate settings
+      become: true
+      ansible.builtin.template:
+        src: templates/logrotate.d/rsyslog
+        dest: /etc/logrotate.d/rsyslog
+        owner: root
+        group: root
+        mode: '0644'
+      when: ansible_os_family == "RED"
+  tags: ['logrotate']
+
+- name: SVOI | rules templating
+  block:
+    - name: Rsyslog rule svoi
+      become: true
+      ansible.builtin.template:
+        src: templates/rsyslog.d/log_main.j2.conf
+        dest: /etc/rsyslog.d/log_main.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: restart-rsyslog
+  tags: ['svoi']
+
+- name: AUDITD | rule templating
+  block:
+    - name: Be sure original audit rules backup exists
+      become: true
+      ansible.builtin.command:
+        cmd: mv /etc/audit/rules.d/audit.rules /etc/audit/audit.rules.orig
+        creates: /etc/audit/audit.rules.orig
+
+    - name: Be sure recommended audit rules applied
+      become: true
+      ansible.builtin.copy:
+        src: files/auditd/audit.rules
+        dest: /etc/audit/rules.d/
+        owner: root
+        group: root
+        mode: '0600'
+      notify: systemd-restart-auditd
+  tags: ['auditd']
+
+- name: JOURNALD | rotate settings
+  become: true
+  ansible.builtin.template:
+    src: templates/systemd/journald.conf
+    dest: /etc/systemd/journald.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart-journald
+  tags: ['journald']
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

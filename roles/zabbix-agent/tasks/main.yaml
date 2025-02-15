@@ -1,0 +1,30 @@
+---
+- name: init host main attributes
+  ansible.builtin.include_tasks:
+    file: prerequirements.yaml
+  tags: ['linux', 'always']
+
+- name: selinux manage policy
+  ansible.builtin.include_tasks:
+    file: selinux.yaml
+  when:
+   - selinux_allowed | bool
+   - selinux_enabled | bool
+  tags: ['linux', 'selinux']
+
+- name: setup firewalld
+  ansible.builtin.include_tasks:
+    file: firewalld.yaml
+  tags: ['linux', 'always']
+
+#TODO не работает залупа блятская
+#- name: remove legacy zabbix agent
+#  ansible.builtin.include_tasks:
+#    file: remove.yaml
+#  when: zabbix_agent2 | bool
+#  tags: ['linux', 'remove', 'legacy']
+
+- name: setup zabbix agent
+  ansible.builtin.include_tasks:
+    file: zabbix.yaml
+  tags: ['linux', 'zabbix']

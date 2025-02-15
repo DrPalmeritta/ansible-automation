@@ -1,0 +1,12 @@
+---
+- name: Check Nexus API status endpoint
+  ansible.builtin.uri:
+    url: "{{ nexus_base_url }}/service/rest/v1/status"
+    method: GET
+    validate_certs: false
+    status_code: 200
+  register: nexus_status
+
+- name: Set fact for Nexus availability
+  set_fact:
+    nexus_is_available: "{{ nexus_status is succeeded }}"

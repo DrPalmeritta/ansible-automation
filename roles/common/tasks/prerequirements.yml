@@ -1,0 +1,24 @@
+---
+- name: Set hostname
+  become: true
+  ansible.builtin.hostname:
+    name: "{{ inventory_hostname }}"
+
+- name: Check if SELinux NOT allowed on some OS types
+  ansible.builtin.set_fact:
+    selinux_allowed: false
+  when:
+    - not selinux_enabled
+    - ansible_distribution == "Ubuntu"
+    - ansible_distribution == "Debian"
+
+# Disabling for Ubuntu and Debian as selinux is disabled by default
+- name: Disable the selinux
+  ansible.posix.selinux:
+    state: disabled
+  when: not selinux_allowed | bool
+  tags: ['selinux']
+
+- name: Check up any old failed systemd units
+  ansible.builtin.command:
+    cmd: systemctl reset-failed

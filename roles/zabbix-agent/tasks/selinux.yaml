@@ -1,0 +1,67 @@
+---
+- name: Install SELinux dependencies
+  become: true
+  ansible.builtin.package:
+    name: "{{ (ansible_distribution_major_version >= '8') | ternary ('policycoreutils-python-utils', 'policycoreutils-python') }}"
+    state: present
+  register: zabbix_agent_policycoreutils_installed
+  until: zabbix_agent_policycoreutils_installed is succeeded
+
+- name: RedHat | Install selinux-policy-targeted
+  become: true
+  ansible.builtin.package:
+    name: selinux-policy-targeted
+    state: installed
+  register: zabbix_agent_selinuxpolicytargeted_installed
+  until: zabbix_agent_selinuxpolicytargeted_installed is succeeded
+  when: ansible_os_family == "RedHat"
+
+- name: Get getenforce binary
+  become: true
+  ansible.builtin.stat:
+    path: /usr/sbin/getenforce
+  register: getenforce_bin
+
+- name: Collect getenforce output
+  become: true
+  ansible.builtin.command: /usr/sbin/getenforce
+  register: sestatus
+  when: "getenforce_bin.stat.exists"
+  changed_when: false
+  check_mode: false
+
+- name: Set zabbix selinux to true if getenforce returns Enforcing or Permissive
+  ansible.builtin.set_fact:
+    zabbix_agent_selinux: "{{ true }}"
+  when:
+    - 'getenforce_bin.stat.exists and ("Enforcing" in sestatus.stdout or "Permissive" in sestatus.stdout)'
+
+- name: SELINUX | Configure port context
+  become: true
+  community.general.seport:
+    ports: "{{ item | split('/') | first }}"
+    proto: tcp
+    setype: zabbix_port_t
+    state: present
+  loop: "{{ firewalld_zabbix_ports }}"
+  when: firewalld_zabbix_ports | length > 0
+
+- name: SELINUX | Allow zabbix agent to start
+  become: true
+  community.general.selinux_permissive:
+    name: zabbix_agent_t
+    permissive: true
+
+- name: SELINUX | Allow zabbix to run sudo commands
+  become: true
+  ansible.posix.seboolean:
+    name: zabbix_run_sudo
+    persistent: true
+    state: true
+  when:
+    - ansible_selinux.status == "enabled"
+    - selinux_allow_zabbix_run_sudo | bool
+  notify: reload-selinux-policy
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

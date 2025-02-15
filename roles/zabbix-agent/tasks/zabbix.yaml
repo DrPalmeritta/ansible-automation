@@ -1,0 +1,60 @@
+---
+- name: "ZABBIX | Be sure {{ zabbix_agent_service_name }} is installed"
+  become: true
+  ansible.builtin.package:
+    name: "{{ zabbix_agent_service_name }}"
+    state: present
+    update_cache: yes
+    disable_gpg_check: true
+  register: zabbix_agent_installed
+  until: zabbix_agent_installed is succeeded
+
+- name: "Configuring {{ zabbix_agent_service_name }} service"
+  become: true
+  ansible.builtin.template:
+    src: zabbix-agent.j2.conf
+    dest: "{{ zabbix_base_path }}/zabbix_agent{{ (zabbix_agent2 | bool) | ternary('2', 'd') }}.conf"
+    owner: root
+    group: root
+    mode: 0644
+  register: zabbix_agent_configured
+  notify:
+    - restart-zabbix-agent
+    - firewalld-service-permitted
+
+- name: ZABBIX | settings tune
+  block:
+    - name: Check if zabbix_agent conf exists
+      ansible.builtin.stat:
+        path: "{{ zabbix_base_path }}/zabbix_agent{{ (zabbix_agent2 | bool) | ternary('2', 'd') }}.conf"
+      register: zabbix_agent_conf
+
+    - name: Set zabbix TLS13 ciphers
+      become: true
+      ansible.builtin.lineinfile:
+        dest: "{{ zabbix_base_path }}/zabbix_agent{{ (zabbix_agent2 | bool) | ternary('2', 'd') }}.conf"
+        regexp: "^TLSCipherCert13="
+        line: "TLSCipherCert13=TLS_AES_256_GCM_SHA384:TLS_CHACHA20_POLY1305_SHA256:TLS_AES_128_GCM_SHA256"
+        insertafter: "# TLSCipherCert13="
+        state: present
+      notify: restart-zabbix-agent
+      when: zabbix_agent_conf.stat.exists
+
+    - name: Set zabbix TLS ciphers
+      become: true
+      ansible.builtin.lineinfile:
+        dest: "{{ zabbix_base_path }}/zabbix_agent{{ (zabbix_agent2 | bool) | ternary('2', 'd') }}.conf"
+        regexp: "^TLSCipherCert="
+        line: "TLSCipherCert=ECDHE+ECDSA+AES256+SHA384"
+        insertafter: "# TLSCipherCert="
+        state: present
+      notify: restart-zabbix-agent
+      when: zabbix_agent_conf.stat.exists
+
+- name: "Make sure the {{ zabbix_agent_service_name }} service is running"
+  become: true
+  ansible.builtin.service:
+    name: "{{ zabbix_agent_service_name }}"
+    state: started
+    enabled: true
+  when: zabbix_agent_configured is defined

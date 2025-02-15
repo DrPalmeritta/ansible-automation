@@ -1,0 +1,76 @@
+---
+- name: Setting facts about current environment
+  ansible.builtin.include_tasks:
+    file: facts.yml
+  tags: ['linux', 'always', 'check']
+
+- name: init host main attributes
+  ansible.builtin.include_tasks:
+    file: prerequirements.yml
+  tags: ['linux', 'always']
+
+- name: selinux manage policy
+  ansible.builtin.include_tasks:
+    file: selinux.yml
+  when:
+    - selinux_allowed | bool
+    - selinux_enabled | bool
+  tags: ['linux', 'selinux']
+
+- name: vm settings tuning
+  ansible.builtin.include_tasks:
+    file: hardering.yml
+  tags: ['linux', 'always']
+
+- name: swap disabling
+  ansible.builtin.include_tasks:
+    file: swap.yml
+  tags: ['linux', 'always', 'swap']
+
+- name: configure /etc/hosts
+  ansible.builtin.include_tasks:
+    file: etc-hosts.yml
+  when: populate_inventory_to_hosts_file
+  tags: ['linux', 'hosts']
+
+- name: add repo nexus
+  ansible.builtin.include_tasks:
+    file: repositories.yml
+  tags: ['linux', 'always']
+  when: ( nexus_is_available | default ('true') )
+
+- name: install all os updates
+  ansible.builtin.include_tasks:
+    file: updates.yml
+  tags: ['linux', 'always', 'updates']
+
+- name: setup firewalld
+  ansible.builtin.include_tasks:
+    file: firewalld.yml
+  tags: ['linux', 'always']
+
+- name: insert necessary certificates
+  ansible.builtin.include_tasks:
+    file: certs.yml
+  tags: ['linux', 'always']
+
+- name: configure users environment
+  ansible.builtin.include_tasks:
+    file: users.yml
+  tags: ['linux', 'user', 'always']
+
+- name: install required packages
+  ansible.builtin.include_tasks:
+    file: dependencies.yml
+  tags: ['linux', 'always']
+
+- name: monitoring & logging setup
+  ansible.builtin.include_tasks:
+    file: observing.yml
+  tags: ['linux', 'observing']
+
+- name: SELinux AVC check after run
+  ansible.builtin.include_tasks:
+    file: se-avc-check.yml
+  when: selinux_allowed | bool
+  tags: ['linux', 'selinux', 'security']

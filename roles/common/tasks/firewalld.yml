@@ -1,0 +1,28 @@
+---
+- name: If firewalld is disabled
+  become: true
+  ansible.builtin.service:
+   name: firewalld.service
+   state: started
+   enabled: yes
+
+- name: Be sure service ssh is enabled on firewall
+  become: true
+  ansible.posix.firewalld:
+    service: ssh
+    permanent: true
+    immediate: false
+    state: enabled
+
+- name: "Be sure {{ item }} traffic permitted"
+  become: true
+  ansible.posix.firewalld:
+    port: "{{ item }}"
+    zone: public
+    permanent: true
+    state: enabled
+  loop: "{{ firewalld_default_ports }}"
+  notify: systemd-reload-firewalld
+
+- name: Flush handlers
+  ansible.builtin.meta: flush_handlers

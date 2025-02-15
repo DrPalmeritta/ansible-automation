@@ -1,0 +1,22 @@
+---
+- name: Add CA root
+  become: true
+  ansible.builtin.copy:
+    src: "{{ certificates_dir }}/CA_root.crt"
+    dest: "/etc/pki/ca-trust/source/anchors/CA_root.crt"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Add CA issue
+  become: true
+  ansible.builtin.copy:
+    src: "{{ certificates_dir }}/Bank_GPB_CA_Server.crt"
+    dest: "/etc/pki/ca-trust/source/anchors/Bank_GPB_CA_Server.crt"
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Extract certs
+  become: true
+  ansible.builtin.shell: update-ca-trust extract

@@ -1,0 +1,14 @@
+---
+- name: Be sure swap is disabled
+  become: true
+  ansible.builtin.command:
+    cmd: swapoff -a
+  changed_when: false
+
+- name: Be sure swap is removed from /etc/fstab
+  become: true
+  ansible.builtin.lineinfile:
+    path: /etc/fstab
+    regexp: '\sswap\s'
+    state: absent
+    backup: true

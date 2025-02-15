@@ -1,0 +1,27 @@
+---
+- name: Apply all OS updates
+  become: true
+  ansible.builtin.yum:
+    name: "*"
+    state: latest
+    update_cache: yes
+    skip_broken: true
+    nobest: true
+    disable_gpg_check: true
+    exclude:
+      - git if 'bitbucket' in group_names
+  register: yum_update_result
+  notify: Reboot if needed
+
+- name: Clean YUM cache
+  become: true
+  ansible.builtin.yum:
+    clean: all
+  when: yum_update_result.changed
+
+- name: Reboot if needed
+  become: true
+  ansible.builtin.reboot:
+    reboot_timeout: 300
+#  listen: reboot-needed
+  when: yum_update_result.changed

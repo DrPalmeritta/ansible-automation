@@ -1,0 +1,32 @@
+---
+- name: Check if SELinux is disabled
+  become: true
+  ansible.posix.selinux:
+    policy: targeted
+    state: enforcing
+  register: selinux
+
+- name: Reboot if required
+  become: true
+  ansible.builtin.reboot:
+    reboot_timeout: 300
+  when: selinux.reboot_required
+
+- name: Allow kernel modules
+  become: true
+  ansible.posix.seboolean:
+    name: domain_kernel_load_modules
+    state: false
+    persistent: true
+
+#- name: Allow auditd to manage /etc directory
+#  ansible.posix.seboolean:
+#    name: auditd_manage_etc
+#    state: true
+#    persistent: yes
+#
+#- name: Set context for audit log files
+#  ansible.posix.file_context:
+#    target: /var/log/audit/audit.log
+#    setype: auditd_log_t
+#    state: present
