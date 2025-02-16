@@ -6,22 +6,47 @@
     value: 65536
     state: present
 
-- name: Set session idle timeout in /etc/bashrc
-  become: true
-  ansible.builtin.lineinfile:
-    dest: '/etc/bashrc'
-    regexp: "TMOUT"
-    line: "TMOUT=900"
-    state: present
+- name: Set session idle timeout
+  block:
+    # Для Debian/Ubuntu используется /etc/bash.bashrc вместо /etc/bashrc
+    - name: Check if bashrc exists
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - /etc/bashrc
+        - /etc/bash.bashrc
+      register: bashrc_files
 
-- name: Set session idle timeout in /etc/profile
-  become: true
-  ansible.builtin.lineinfile:
-    dest: '/etc/profile'
-    regexp: "TMOUT"
-    line: "TMOUT=900"
-    state: present
+    - name: Set TMOUT in bashrc
+      become: true
+      ansible.builtin.lineinfile:
+        dest: "{{ item.item }}"
+        regexp: "^TMOUT="
+        line: "TMOUT=900"
+        state: present
+      loop: "{{ bashrc_files.results }}"
+      when: item.stat.exists
 
+    - name: Check if tmout.sh exists
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - "/etc/profile"
+        - "/etc/profile.d/tmout.sh" # Альтернативный вариант
+      register: profile_files
+
+    - name: Set TMOUT in profile files
+      become: true
+      ansible.builtin.lineinfile:
+        dest: "{{ item.item }}"
+        regexp: "^TMOUT="
+        line: "TMOUT=900"
+        state: present
+      loop: "{{ profile_files.results }}"
+      when: item.stat.exists
+  tags: ['timeout']
+
+#TODO Для Debian/Ubuntu требуется установка libpam-pwquality
 - name: Set min password length in /etc/security/pwquality.conf
   become: true
   ansible.builtin.lineinfile:
@@ -29,6 +54,7 @@
     regexp: "minlen"
     line: "minlen = 16"
     state: present
+  when: ansible_distribution not in ['Debian', 'Ubuntu']
 
 - name: SSHD | policy settings tune
   block:
@@ -86,7 +112,9 @@
   tags: ['sshd']
 
 - name: USERS | password settings tune
-  when: allow_user_passwords
+  when:
+    - allow_user_passwords
+    - ansible_distribution not in ['Debian', 'Ubuntu']
   block:
     - name: Get all users
       become: true
@@ -104,6 +132,7 @@
         password_expire_min: 7
       with_items: "{{ all_users }}"
 
+    #TODO Для Debian/Ubuntu требуется установка libpam-pwquality
     - name: Password complexity gecoscheck
       become: true
       ansible.builtin.lineinfile:
@@ -112,6 +141,7 @@
         line: "gecoscheck = 1"
         state: present
 
+    #TODO Для Debian/Ubuntu требуется установка libpam-pwquality
     - name: Password complexity usercheck
       become: true
       ansible.builtin.lineinfile:

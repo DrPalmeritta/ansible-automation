@@ -4,21 +4,23 @@
   ansible.builtin.hostname:
     name: "{{ inventory_hostname }}"
 
-- name: Check if SELinux NOT allowed on some OS types
+- name: Check if SELinux is NOT allowed on Debian-based systems
   ansible.builtin.set_fact:
     selinux_allowed: false
   when:
-    - not selinux_enabled
-    - ansible_distribution == "Ubuntu"
-    - ansible_distribution == "Debian"
+    - not selinux_enabled | default(false)
+    - ansible_distribution in ['Ubuntu', 'Debian']
 
-# Disabling for Ubuntu and Debian as selinux is disabled by default
-- name: Disable the selinux
+# Отключаем SELinux только на системах, где это возможно. В Debian like OS нет зависимых python se библиотек.
+- name: Disable SELinux
   ansible.posix.selinux:
     state: disabled
-  when: not selinux_allowed | bool
+  when:
+    - not selinux_allowed | default(true) | bool
+    - ansible_distribution not in ['Ubuntu', 'Debian']
   tags: ['selinux']
 
 - name: Check up any old failed systemd units
+  become: true
   ansible.builtin.command:
     cmd: systemctl reset-failed

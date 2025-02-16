@@ -1,9 +1,8 @@
 ---
 - name: Common playbook to preconfigure RHEL / REDOS hosts
-  hosts: all
+  hosts: "{{ target | default('all') }}"
   gather_facts: true
   become: false
-  roles: ['common']
 
   tasks:
     - name: Check variable definitions
@@ -13,3 +12,18 @@
       loop:
         - environment
         - selinux_enabled
+
+    - name: COMMON | Including main preconfigure role
+      ansible.builtin.include_role:
+        name: common
+      when: true
+    
+    - name: KESL | Including kesl agent setup role
+      ansible.builtin.include_role:
+        name: kesl-agent
+      when: false
+    
+    - name: ZABBIX | Including zabbix agent setup role
+      ansible.builtin.include_role:
+        name: zabbix-agent
+      when: false
