@@ -58,58 +58,84 @@
 
 - name: SSHD | policy settings tune
   block:
+    # В Debian/Ubuntu файл настроек SSH находится по пути /etc/ssh/sshd_config, а не /etc/sysconfig/sshd
+    - name: Check if sysconfig dir exists
+      ansible.builtin.stat:
+        path: "{{ item }}"
+      loop:
+        - /etc/sysconfig/sshd
+        - /etc/ssh/sshd_config
+      register: sshd_files
+
     - name: Ensure system crypto policy disabled for ssh
       become: true
       ansible.builtin.lineinfile:
-        dest: '/etc/sysconfig/sshd'
+        dest: "{{ item.item }}"
         regexp: "^CRYPTO_POLICY="
         line: "CRYPTO_POLICY="
         insertafter: "# CRYPTO_POLICY="
         state: present
+        validate: sshd -t -f %s
+      loop: "{{ sshd_files.results }}"
+      when: 
+        - item.stat.exists
+        - ansible_os_family not in ['Debian', 'Ubuntu']
 
     - name: Set ssh Ciphers
       become: true
       ansible.builtin.lineinfile:
-        dest: "/etc/ssh/sshd_config"
+        dest: "{{ item.item }}"
         regexp: "^Ciphers"
         line: "Ciphers aes256-ctr,aes192-ctr,aes128-ctr"
         state: present
+        insertafter: "^#Ciphers"
         validate: sshd -t -f %s
-      notify: restart-sshd
+      loop: "{{ sshd_files.results }}"
+      when: item.stat.exists
+      notify: "{{ 'restart-ssh' if ansible_os_family in ['Debian', 'Ubuntu'] else 'restart-sshd' }}"
 
     - name: Set ssh MACs
       become: true
       ansible.builtin.lineinfile:
-        dest: "/etc/ssh/sshd_config"
+        dest: "{{ item.item }}"
         regexp: "^MACs"
         line: "MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,\
                hmac-sha2-512,hmac-sha2-256"
         state: present
         validate: sshd -t -f %s
-      notify: restart-sshd
+        insertafter: "^#MACs"
+      loop: "{{ sshd_files.results }}"
+      when: item.stat.exists
+      notify: "{{ 'restart-ssh' if ansible_os_family in ['Debian', 'Ubuntu'] else 'restart-sshd' }}"
 
     - name: Set ssh key exchanges
       become: true
       ansible.builtin.lineinfile:
-        dest: "/etc/ssh/sshd_config"
+        dest: "{{ item.item }}"
         regexp: "^KexAlgorithms"
         line: "KexAlgorithms curve25519-sha256,curve25519-sha256@libssh.org,\
                diffie-hellman-group16-sha512,diffie-hellman-group18-sha512,\
                diffie-hellman-group-exchange-sha256"
         state: present
         validate: sshd -t -f %s
-      notify: restart-sshd
+        insertafter: "^#KexAlgorithms"
+      loop: "{{ sshd_files.results }}"
+      when: item.stat.exists
+      notify: "{{ 'restart-ssh' if ansible_os_family in ['Debian', 'Ubuntu'] else 'restart-sshd' }}"
 
     - name: Set ssh HostKeyAlgorithms
       become: true
       ansible.builtin.lineinfile:
-        dest: "/etc/ssh/sshd_config"
+        dest: "{{ item.item }}"
         regexp: "^HostKeyAlgorithms"
-        line: "HostKeyAlgorithms ssh-ed25519,ssh-rsa"
+        line: "{{ 'HostKeyAlgorithms ssh-ed25519,ssh-rsa' + (',' + 'rsa-sha2-512,rsa-sha2-256' if ansible_os_family in ['Debian', 'Ubuntu']) }}"
         state: present
         validate: sshd -t -f %s
-      notify: restart-sshd
-  tags: ['sshd']
+        insertafter: "^#HostKeyAlgorithms"
+      loop: "{{ sshd_files.results }}"
+      when: item.stat.exists
+      notify: "{{ 'restart-ssh' if ansible_os_family in ['Debian', 'Ubuntu'] else 'restart-sshd' }}"
+  tags: ['ssh']
 
 - name: USERS | password settings tune
   when:

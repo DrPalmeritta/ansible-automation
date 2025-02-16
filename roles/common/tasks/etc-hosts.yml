@@ -4,10 +4,10 @@
   ansible.builtin.blockinfile:
     dest: /etc/hosts
     block: |
-      {% for host in groups[host_group] %}
-      {{ hostvars[host].ansible_host }} {{ hostvars[host]['ansible_facts']['fqdn'] }} {{ hostvars[host]['ansible_facts']['hostname'] }}
+      {% for target in play_hosts %}
+      {{ hostvars[target].ansible_host }} {{ (hostvars[target]["ansible_facts"]["fqdn"]|default('')) + (' ' + (hostvars[target]["ansible_facts"]["hostname"]|default(''))) }}
       {% endfor %}
-    marker: "# {mark} Ansible inventory hosts: {{ host_group }}"
+    marker: "# {mark} Ansible inventory hosts: {{ play_hosts }}"
     insertafter: EOF
     owner: root
     group: root

@@ -1,22 +1,36 @@
 ---
-- name: Restart chronyd
+- name: Restart chrony
   become: true
   ansible.builtin.service:
-    name: chronyd
+    name: "{{ (ansible_os_family in ['Debian','Ubuntu']) | ternary('chrony', 'chronyd') }}"
     state: restarted
-  listen: restart-chronyd
+  listen: 
+    - restart-chrony
+    - restart-chronyd
 
-- name: Restart sshd
+- name: Restart ssh
   become: true
   ansible.builtin.service:
-    name: sshd
+    name: "{{ ansible_os_family in ['Debian', 'Ubuntu'] | ternary('ssh', 'sshd') }}"
     state: restarted
-  listen: restart-sshd
+  listen:
+    - restart-ssh
+    - restart-sshd
 
 - name: Reload systemd configuration
   become: true
   ansible.builtin.command: systemctl daemon-reload
   listen: reload-systemd
+
+- name: Restart firewalld
+  become: true
+  ansible.builtin.systemd_service:
+    name: firewalld.service
+    state: restarted
+  listen: restart-firewalld
+  when:
+    - ansible_facts.services["firewalld"] is defined
+    - ansible_facts.services["firewalld"].state == "running"
 
 - name: Reload firewalld
   become: true
@@ -28,15 +42,12 @@
     - ansible_facts.services["firewalld"] is defined
     - ansible_facts.services["firewalld"].state == "running"
 
-- name: Extract certs
-  become: true
-  ansible.builtin.shell: update-ca-trust extract
-  listen: update-ca
-
 - name: Restart auditd
   become: true
-  ansible.builtin.command:
-    cmd: /sbin/service auditd condrestart
+  ansible.builtin.systemd:
+    name: auditd
+    state: restarted # Безопасен и работает как try-restart в systemd
+  when: ansible_facts.services['auditd.service'].state == 'running' # Безопасная беопасность
   listen: systemd-restart-auditd
 
 - name: Restart rsyslog

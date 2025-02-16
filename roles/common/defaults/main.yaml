@@ -4,6 +4,8 @@
 
 systemctl_path: /etc/systemd/system
 log_main_address: ""
+common_time_servers:
+  - pool.ntp.org
 
 ########################################################################################################################
 ### /ETC/HOSTS #########################################################################################################
@@ -15,7 +17,7 @@ populate_inventory_to_hosts_file: true
 ### PACKAGES ###########################################################################################################
 
 common_packages:
-  - java-17-openjdk
+  - "{{ 'openjdk-17-jdk' if ansible_os_family in ['Debian', 'Ubuntu'] else 'java-17-openjdk' }}"
   - telnet
   - net-tools
   - tcpdump
@@ -34,13 +36,16 @@ allow_user_passwords: true
 
 # Список пользователей для добавления на все сервера ZAPK
 common_users_list:
-  - name: "palmer"
+  - name: "nikita"
     group: "users"
     comment: "Евдокимов Никита - devops инженер"
+    # Не устанавливать если останется пустым
+    password:
     # Публичный ключ пользователя для доступа к серверам по ключам
     key: ""
  
 # - name: "vanechka"
 #   group: "users"
 #   comment: "Иван Иванов - батя интеренета"
+#   password:
 #   key: ""

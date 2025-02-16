@@ -1,3 +1,30 @@
+---
+- name: Pull service facts
+  ansible.builtin.service_facts:
+
+- name: Print service facts
+  ansible.builtin.debug:
+    var: ansible_facts.services
+
+- name: Install firewalld if not present
+  when:
+    - ansible_os_family in ['Debian', 'Ubuntu']
+    - "'firewalld.service' not in ansible_facts.services"
+  block:
+    - name: Install firewalld
+      become: true
+      ansible.builtin.apt:
+        name: firewalld
+        state: present
+
+    - name: Be sure firewalld service started
+      become: true
+      ansible.builtin.systemd_service:
+        name: firewalld
+        enabled: yes
+        state: started
+      notify: restart-firewalld
+
 - name: Configure firewalld
   block:
     - name: Ensure firewalld is running

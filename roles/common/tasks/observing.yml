@@ -3,7 +3,7 @@
   block:
     - name: Be sure chrony is installed
       become: true
-      ansible.builtin.dnf:
+      ansible.builtin.package:
         name: chrony
         state: present
 
@@ -11,44 +11,39 @@
       become: true
       ansible.builtin.template:
         src: chrony.j2.conf
-        dest: /etc/chrony.conf
+        dest: "{{ (ansible_os_family in ['Debian','Ubuntu']) | ternary('/etc/chrony/chrony.conf', '/etc/chrony.conf') }}"
         mode: '0644'
-      notify: restart-chronyd
+      notify: restart-chrony
 
-    - name: Be sure chronyd is running and enabled
+    - name: Be sure chrony is running and enabled
       become: true
       ansible.builtin.service:
-        name: chronyd.service
+        name: "{{ (ansible_os_family in ['Debian','Ubuntu']) | ternary('chrony', 'chronyd') }}"
         state: started
         enabled: true
   tags: ['chrony']
 
-- name: LOGROTATE | add custom service rules
-  block:
-    - name: Rsyslog rotate settings
-      become: true
-      ansible.builtin.template:
-        src: templates/logrotate.d/rsyslog
-        dest: /etc/logrotate.d/syslog
-        owner: root
-        group: root
-        mode: '0644'
-      when: ansible_os_family == "RedHat"
-
-    - name: Rsyslog rotate settings
-      become: true
-      ansible.builtin.template:
-        src: templates/logrotate.d/rsyslog
-        dest: /etc/logrotate.d/rsyslog
-        owner: root
-        group: root
-        mode: '0644'
-      when: ansible_os_family == "RED"
+# В RedHat пакет rsyslog создает файл syslog в logrotate.d, другие — rsyslog
+- name: LOGROTATE | Rsyslog rotate settings
+  become: true
+  ansible.builtin.template:
+    src: templates/logrotate.d/rsyslog
+    dest: "/etc/logrotate.d/{{ (ansible_os_family == 'RedHat') | ternary('syslog', 'rsyslog') }}"
+    owner: root
+    group: root
+    mode: '0644'
+  when: ansible_os_family == "RedHat"
   tags: ['logrotate']
 
-- name: RSYSLOG | rules templating
+- name: RSYSLOG | service templating
   block:
-    - name: Rsyslog rule
+    - name: Be sure rsyslog is installed
+      become: true
+      ansible.builtin.package:
+        name: rsyslog
+        state: present
+
+    - name: Be sure rsyslog is configured
       become: true
       ansible.builtin.template:
         src: templates/rsyslog.d/log_main.j2.conf
@@ -61,17 +56,34 @@
 
 - name: AUDITD | rule templating
   block:
-    - name: Be sure original audit rules backup exists
+    - name: Be sure auditd is installed
       become: true
-      ansible.builtin.command:
-        cmd: mv /etc/audit/rules.d/audit.rules /etc/audit/audit.rules.orig
-        creates: /etc/audit/audit.rules.orig
+      ansible.builtin.package:
+        name: auditd
+        state: present
+
+    - name: Check existing audit rules
+      become: true
+      ansible.builtin.stat:
+        path: "{{ (ansible_os_family in ['Debian','Ubuntu']) | ternary('/etc/audit/audit.rules', '/etc/audit/rules.d/audit.rules') }}"
+      register: audit_rules_check
+
+    - name: Backup original audit rules
+      become: true
+      ansible.builtin.copy:
+        src: "{{ (ansible_os_family in ['Debian','Ubuntu']) | ternary('/etc/audit/audit.rules', '/etc/audit/rules.d/audit.rules') }}"
+        dest: /etc/audit/audit.rules.orig
+        remote_src: yes
+        owner: root
+        group: root
+        mode: '0600'
+      when: audit_rules_check.stat.exists
 
     - name: Be sure recommended audit rules applied
       become: true
-      ansible.builtin.copy:
+      ansible.builtin.template:
         src: files/auditd/audit.rules
-        dest: /etc/audit/rules.d/
+        dest: "{{ (ansible_os_family in ['Debian','Ubuntu']) | ternary('/etc/audit/audit.rules', '/etc/audit/rules.d/audit.rules') }}"
         owner: root
         group: root
         mode: '0600'
