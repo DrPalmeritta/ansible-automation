@@ -13,6 +13,7 @@
 
 # Отключаем SELinux только на системах, где это возможно. В Debian like OS нет зависимых python se библиотек.
 - name: Disable SELinux
+  become: true
   ansible.posix.selinux:
     state: disabled
   when:
