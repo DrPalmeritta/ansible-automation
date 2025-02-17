@@ -8,7 +8,7 @@
     - /usr/local/share/ca-certificates/
   register: certificates_available_dir
 
-- name: Distribute necessary certificates to RHEL hosts
+- name: Distribute necessary certificates
   become: true
   ansible.builtin.copy:
     src: "{{ item }}"
@@ -17,19 +17,6 @@
     group: root
     mode: '0644'
   with_fileglob: files/*.crt
-  # when: item.stat.exists
-
-# - name: Distribute necessary certificates to Debian hosts
-#   become: true
-#   ansible.builtin.copy:
-#     src: "{{ item }}"
-#     dest: "{{ item.item }}"
-#     owner: root
-#     group: root
-#     mode: '0644'
-#   with_fileglob: files/*.crt
-#   loop: "{{ certificates_available_dir.results }}"
-#   when: item.stat.exists
 
 - name: Extract certs
   become: true
