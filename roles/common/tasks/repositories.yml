@@ -67,7 +67,7 @@
     - name: Add repo GPG key
       become: true
       ansible.builtin.apt_key:
-        url: "{{ nexus_base_url }}/repository/apt-keys/{{ apt_gpg_key }}"
+        url: "{{ private_repository_base_url }}/repository/apt-keys/{{ apt_gpg_key }}"
         state: present
       when: apt_gpg_key is defined
 
