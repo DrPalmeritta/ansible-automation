@@ -1,5 +1,7 @@
 ---
 - name: YUM Repository Management
+  when:
+    - ansible_pkg_mgr == "yum"
   block:
     - name: Display the content of current yum.repos.d
       ansible.builtin.debug:
@@ -43,6 +45,8 @@
   tags: ['yum', 'repositories']
 
 - name: APT Repository Management
+  when:
+    - ansible_pkg_mgr == "apt"
   block:
     - name: Backup existing sources
       become: true
