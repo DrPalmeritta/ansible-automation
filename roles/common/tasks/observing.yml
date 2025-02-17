@@ -52,6 +52,13 @@
         group: root
         mode: '0644'
       notify: restart-rsyslog
+
+    - name: Be sure rsyslog is running and enabled
+      become: true
+      ansible.builtin.service:
+        name: rsyslog
+        state: started
+        enabled: true
   tags: ['rsyslog']
 
 - name: AUDITD | rule templating
