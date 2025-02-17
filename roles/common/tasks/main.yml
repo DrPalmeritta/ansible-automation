@@ -33,7 +33,7 @@
 - name: Configure /etc/hosts
   ansible.builtin.include_tasks:
     file: etc-hosts.yml
-  when: populate_inventory_to_hosts_file
+  when: populate_inventory_to_hosts_file | bool
   tags: ['linux', 'hosts']
 
 - name: Add custom repos if defined so
