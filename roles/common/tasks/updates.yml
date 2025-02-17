@@ -1,3 +1,4 @@
+---
 - name: OS Updates Management
   block:
     - name: YUM | Apply all updates (RHEL/CentOS/RedOS)
